@@ -13,6 +13,8 @@ type Config struct {
 	Sync SyncConfig `yaml:"sync"`
 	// Run is the configuration for the run service
 	Run RunConfig `yaml:"run"`
+	// Coding is the configuration for the coding service
+	Coding CodingConfig `yaml:"coding"`
 }
 
 // LoadFromFile loads configuration from YAML file
@@ -69,4 +71,14 @@ type RefreshCmd struct {
 	Condition string `yaml:"condition"`
 	// Cmd is the command to refresh the workspace
 	Cmds []string `yaml:"cmds"`
+}
+
+type CodingConfig struct {
+	Type string `yaml:"type"`
+	Gemini GeminiCodingConfig `yaml:"gemini"`
+}
+
+type GeminiCodingConfig struct {
+	Baseurl string `yaml:"baseurl"`
+	Apikey string `yaml:"apikey"`
 }

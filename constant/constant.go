@@ -7,3 +7,7 @@ var (
 var (
 	DEFAULT_WORKSPACE = "/Users/Shared/Projects/openaloha/openaloha-sidecar-test"
 )
+
+var (
+	CODING_TYPE_GEMINI = "gemini"
+)

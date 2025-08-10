@@ -25,3 +25,9 @@ run:
     - condition: "package.json"
       cmds:
         - "cd openaloha-front-test/openaloha-front-vue-test && npm install && nohup npm run dev &"
+
+  coding:
+    type: gemini
+    gemini:
+      baseurl: https://google.com
+      apikey: sk-xxxx

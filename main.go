@@ -13,8 +13,11 @@ import (
 
 	"github.com/openaloha/openaloha-devpod/api"
 	"github.com/openaloha/openaloha-devpod/config"
+	"github.com/openaloha/openaloha-devpod/constant"
 	_ "github.com/openaloha/openaloha-devpod/internal/run/handler"
+	_ "github.com/openaloha/openaloha-devpod/internal/coding/handler"
 	"github.com/openaloha/openaloha-devpod/run/factory"
+	codingfactory "github.com/openaloha/openaloha-devpod/coding/factory"
 	runhandler "github.com/openaloha/openaloha-devpod/run/handler"
 	"github.com/openaloha/openaloha-devpod/runfunc"
 	"github.com/openaloha/openaloha-devpod/sync"
@@ -57,9 +60,17 @@ func main() {
 		fmt.Println("start sync job error: ", err)
 	}
 
+	// init coding handler
+	coding, err := codingfactory.New(constant.CODING_TYPE_GEMINI)
+	coding.FinishInit(config, &handler)
+	if err != nil {
+		fmt.Println("init coding handler error: ", err)
+		return
+	}
+
 	// start server
 	fmt.Println("start server")
-	server := api.NewDevPodServer(":10003", handler)
+	server := api.NewDevPodServer(":10003", coding)
 	errChan, err := server.ListenAndServe()
 	if err != nil {
 		fmt.Printf("Failed to start server: %v\n", err)
@@ -136,7 +147,7 @@ func buildInitFunc(config config.Config, handler runhandler.RunHandler) runfunc.
 	return func() error {
 		fmt.Println("init func")
 		// run init cmd
-		if err := handler.Run(config.Run.Init.Cmds); err != nil {
+		if err := handler.Run(config.Run.Init.Cmds, os.Stdout, os.Stderr); err != nil {
 			return err
 		}
 		return nil
@@ -155,7 +166,7 @@ func buildRefreshFunc(config config.Config, handler runhandler.RunHandler) runfu
 		}
 
 		// run refresh cmd
-		if err := handler.Run(refreshCmds); err != nil {
+		if err := handler.Run(refreshCmds, os.Stdout, os.Stderr); err != nil {
 			return err
 		}
 		return nil

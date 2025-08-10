@@ -7,20 +7,20 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/openaloha/openaloha-devpod/run/handler"
+	"github.com/openaloha/openaloha-devpod/coding/handler"
 )
 
 type DevPodServer struct {
 	srv *http.Server
-	run handler.RunHandler
+	coding handler.CodingHandler
 }
 
-func NewDevPodServer(addr string, run handler.RunHandler) *DevPodServer {
+func NewDevPodServer(addr string, coding handler.CodingHandler) *DevPodServer {
 	srv := &DevPodServer{
 		srv: &http.Server{
 			Addr: addr,
 		},
-		run: run,
+		coding: coding,
 	}
 	router := mux.NewRouter()
     router.HandleFunc("/ask", srv.CreateAskHandler)
@@ -38,7 +38,7 @@ func(s *DevPodServer) CreateAskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// 使用echo管道的方式直接向gemini传递指令
-	err := s.run.Run([]string{"gemini -y -a -p " + question})
+	err := s.coding.Coding(question, w, w)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("Error: %v", err)))

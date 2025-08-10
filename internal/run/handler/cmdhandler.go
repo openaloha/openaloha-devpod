@@ -2,7 +2,7 @@ package handler
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"os/exec"
 	"strings"
 
@@ -22,7 +22,7 @@ func init() {
 	})
 }
 
-func (r *CmdRunHandler) Run(cmds []string) error {
+func (r *CmdRunHandler) Run(cmds []string, stdout io.Writer, stderr io.Writer) error {
 	fmt.Printf("run cmd: %s\n", cmds)
 
 	if len(cmds) == 0 {
@@ -40,8 +40,8 @@ func (r *CmdRunHandler) Run(cmds []string) error {
 
 		// 在 macOS/Linux 上使用 sh -c 来执行命令
 		cmdObj = exec.Command("sh", "-c", cmd)
-		cmdObj.Stdout = os.Stdout
-		cmdObj.Stderr = os.Stderr
+		cmdObj.Stdout = stdout
+		cmdObj.Stderr = stderr
 
 		// 设置命令的工作目录
 		if r.Workspace != "" {
