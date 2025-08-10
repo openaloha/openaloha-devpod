@@ -1,51 +1,72 @@
 package config
 
+import (
+	"io/ioutil"
+	"gopkg.in/yaml.v2"
+)
+
 // Config is the configuration for the sidecar
 type Config struct {
 	// Workspace is the workspace to sync
-	Workspace string `json:"workspace"`
+	Workspace string `yaml:"workspace"`
 	// Sync is the configuration for the sync service
-	Sync SyncConfig `json:"sync"`
+	Sync SyncConfig `yaml:"sync"`
 	// Run is the configuration for the run service
-	Run RunConfig `json:"run"`
+	Run RunConfig `yaml:"run"`
+}
+
+// LoadFromFile loads configuration from YAML file
+func LoadFromFile(filePath string) (*Config, error) {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var config Config
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
 // SyncConfig is the configuration for the sync service
 type SyncConfig struct {
 	// Type is the type of sync service to use
-	Type string `json:"type"`
+	Type string `yaml:"type"`
 	// Git is the configuration for the git sync service
-	Git GitSyncConfig `json:"git"`
+	Git GitSyncConfig `yaml:"git"`
 }
 
 // GitSyncConfig is the configuration for the git sync service
 type GitSyncConfig struct {
 	// Url is the repository to sync
-	Url string `json:"url"`
+	Url string `yaml:"url"`
 	// Branch is the branch to sync
-	Branch string `json:"branch"`
+	Branch string `yaml:"branch"`
 	// SyncInterval is the interval to sync
-	SyncInterval string `json:"sync_interval"`
+	SyncInterval string `yaml:"sync-interval"`
 }
 
 // RunConfig is the configuration for the run service
 type RunConfig struct {
 	// InitCmd is the command to init the workspace
-	Init InitCmd `json:"init"`
+	Init InitCmd `yaml:"init"`
 	// RefreshCmd is the command to refresh the workspace
-	Refresh []RefreshCmd `json:"refresh"`
+	Refresh []RefreshCmd `yaml:"refresh"`
 }
 
 // InitCmd is the configuration for the init command
 type InitCmd struct {
 	// Cmd is the command to init the workspace
-	Cmds []string `json:"cmds"`
+	Cmds []string `yaml:"cmds"`
 }
 
 // RefreshCmd is the configuration for the refresh command
 type RefreshCmd struct {
 	// Condition is the condition to refresh the workspace
-	Condition string `json:"condition"`
+	Condition string `yaml:"condition"`
 	// Cmd is the command to refresh the workspace
-	Cmds []string `json:"cmds"`
+	Cmds []string `yaml:"cmds"`
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -36,7 +37,7 @@ func (h *GitSyncHandler) Init(workspace string, syncConfig config.SyncConfig, in
 }
 
 // Refresh is the method to refresh code
-func (h *GitSyncHandler) Refresh(workspace string, syncConfig config.SyncConfig, refreshFunc runfunc.RefreshFunc) error {
+func (h *GitSyncHandler) Refresh(ctx context.Context, workspace string, syncConfig config.SyncConfig, refreshFunc runfunc.RefreshFunc) error {
 	// parse sync interval
 	duration, err := time.ParseDuration(syncConfig.Git.SyncInterval)
 	if err != nil {
@@ -48,6 +49,9 @@ func (h *GitSyncHandler) Refresh(workspace string, syncConfig config.SyncConfig,
 	defer ticker.Stop()
 	for {
 		select {
+		case <-ctx.Done():
+			fmt.Println("[git sync handler] 收到停止信号，正在退出...")
+			return ctx.Err()
 		case <-ticker.C:
 			fmt.Printf("[%s] 执行任务, 当前时间: %s\n",
 				"git sync handler",

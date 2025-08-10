@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"github.com/openaloha/openaloha-devpod/config"
 	"github.com/openaloha/openaloha-devpod/runfunc"
 )
@@ -17,5 +18,5 @@ type SyncHandler interface {
 	Init(workspace string, syncConfig config.SyncConfig, initFunc runfunc.InitFunc) error
 
 	// Refresh is the method to refresh code
-	Refresh(workspace string, syncConfig config.SyncConfig, refreshFunc runfunc.RefreshFunc) error
+	Refresh(ctx context.Context, workspace string, syncConfig config.SyncConfig, refreshFunc runfunc.RefreshFunc) error
 }

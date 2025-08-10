@@ -1,15 +1,18 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
+	"github.com/openaloha/openaloha-devpod/api"
 	"github.com/openaloha/openaloha-devpod/config"
-	"github.com/openaloha/openaloha-devpod/constant"
 	_ "github.com/openaloha/openaloha-devpod/internal/run/handler"
 	"github.com/openaloha/openaloha-devpod/run/factory"
 	runhandler "github.com/openaloha/openaloha-devpod/run/handler"
@@ -18,7 +21,15 @@ import (
 )
 
 func main() {
-	// parse config from environment variables
+	// 创建可取消的context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	// 监听系统信号
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	
+	// parse config from file or command line arguments
 	config, err := parseConfig()
 	if err != nil {
 		fmt.Println("parse config error: ", err)
@@ -42,43 +53,59 @@ func main() {
 	refreshFunc := buildRefreshFunc(config, handler)
 
 	// start sync job to sync code
-	if err := startSync(config, initFunc, refreshFunc); err != nil {
+	if err = startSync(ctx, config, initFunc, refreshFunc); err != nil {
 		fmt.Println("start sync job error: ", err)
+	}
+
+	// start server
+	fmt.Println("start server")
+	server := api.NewDevPodServer(":10003", handler)
+	errChan, err := server.ListenAndServe()
+	if err != nil {
+		fmt.Printf("Failed to start server: %v\n", err)
 		return
+	}
+
+	// 在goroutine中监听信号
+	go func() {
+		<-sigChan
+		fmt.Println("\n收到停止信号，正在优雅停止...")
+		// 优雅停止服务器
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			fmt.Printf("服务器停止失败: %v\n", err)
+		}
+		cancel() // 取消主context
+	}()
+
+	// 等待信号或服务器错误
+	select {
+	case <-ctx.Done():
+		fmt.Println("程序已优雅停止")
+	case err := <-errChan:
+		if err != nil {
+			fmt.Printf("Server error: %v\n", err)
+		}
+		cancel() // 如果服务器出错，也要取消context
 	}
 }
 
-// parse config from environment variables
+// parse config from YAML file
 func parseConfig() (config.Config, error) {
-	// init config
-	var config config.Config
+	// define config file path flag
+	configFile := flag.String("config", "config.yaml", "path to YAML configuration file")
+	flag.Parse()
 
-	// parse config
-	// common config
-	flag.StringVar(&config.Workspace, "workspace", constant.DEFAULT_WORKSPACE, "workspace")
-	// sync config
-	flag.StringVar(&config.Sync.Type, "sync.type", constant.SYNC_TYPE_GIT, " sync type")
-	flag.StringVar(&config.Sync.Git.Url, "sync.git.url", "", "sync url for git")
-	flag.StringVar(&config.Sync.Git.Branch, "sync.git.branch", "", "git branch")
-	flag.StringVar(&config.Sync.Git.SyncInterval, "sync.git.syncInterval", "", "git syncInterval")
-	// run config
-	initCmd := flag.String("run.init.cmds", "", "init cmd")
-	refreshCmd := flag.String("run.refresh", "[]", "refresh cmd")
+	// load config from file
+	cfg, err := config.LoadFromFile(*configFile)
+	if err != nil {
+		return config.Config{}, fmt.Errorf("failed to load config file %s: %v", *configFile, err)
+	}
 
 	// TODO:validate config
 
-	flag.Parse()
-
-	if initCmd != nil && *initCmd != "" {
-		config.Run.Init.Cmds = strings.Split(*initCmd, ";")
-	}
-	if refreshCmd != nil && *refreshCmd != "" {
-		if err := json.Unmarshal([]byte(*refreshCmd), &config.Run.Refresh); err != nil {
-			return config, err
-		}
-	}
-
-	return config, nil
+	return *cfg, nil
 }
 
 // init workspace
@@ -97,11 +124,11 @@ func initWorkspace(workspace string) error {
 }
 
 // start sync job to sync code
-func startSync(config config.Config, initFunc runfunc.InitFunc, refreshFunc runfunc.RefreshFunc) error {
+func startSync(ctx context.Context, config config.Config, initFunc runfunc.InitFunc, refreshFunc runfunc.RefreshFunc) error {
 	syncFacade := &sync.SyncFacade{
 		Config: config,
 	}
-	return syncFacade.Sync(initFunc, refreshFunc)
+	return syncFacade.Sync(ctx, initFunc, refreshFunc)
 }
 
 // buildInitFunc returns a new InitFunc
