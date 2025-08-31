@@ -1,7 +1,10 @@
 package handler
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 type RunHandler interface {
-	Run(cmds []string, stdout io.Writer, stderr io.Writer) error
+	Run(cmds []string, stdout io.Writer, stderr io.Writer, cancelChan chan context.CancelFunc) error
 }

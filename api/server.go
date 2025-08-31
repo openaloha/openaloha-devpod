@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
-
 	"github.com/gorilla/mux"
 	"openaloha.io/openaloha-devpod/coding/handler"
 )
@@ -49,22 +47,15 @@ func (s *DevPodServer) CreateAskHandler(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte("success"))
 }
 
-func (s *DevPodServer) ListenAndServe() (<-chan error, error) {
-	var err error
+func (s *DevPodServer) ListenAndServe() <-chan error {
 	errChan := make(chan error)
-	// 通过 Goroutine 运行，避免阻塞代码继续运行
 	go func() {
-		err = s.srv.ListenAndServe()
-		errChan <- err
+		err := s.srv.ListenAndServe()
+		if err != nil {
+			errChan <- err
+		}
 	}()
-
-	// 监听 http server Goroutine 运行状态
-	select {
-	case err = <-errChan:
-		return nil, err
-	case <-time.After(time.Second):
-		return errChan, nil
-	}
+	return errChan
 }
 
 // Shutdown 优雅停止服务器

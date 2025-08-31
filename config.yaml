@@ -10,7 +10,7 @@ sync:
   git:
     url: "https://github.com/openaloha/openaloha-test"
     branch: "main"
-    sync-interval: "30s"
+    sync-interval: "10s"
 
 # 运行配置
 run:
@@ -22,6 +22,8 @@ run:
   # 刷新命令配置
   refresh:
     - condition: "*.vue"
+      cmds:
+        - "cd openaloha-front-test/openaloha-front-vue-test && npm install && npm run dev"
     - condition: "package.json"
       cmds:
         - "cd openaloha-front-test/openaloha-front-vue-test && npm install && npm run dev"

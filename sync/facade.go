@@ -1,8 +1,7 @@
 package sync
 
 import (
-	"context"
-
+	"fmt"
 	"openaloha.io/openaloha-devpod/config"
 	_ "openaloha.io/openaloha-devpod/internal/sync/handler"
 	"openaloha.io/openaloha-devpod/runfunc"
@@ -13,14 +12,10 @@ import (
 // SyncFacade is the facade for the sync service
 type SyncFacade struct {
 	Config config.Config
-	ctx    context.Context
 }
 
 // Sync is the method to init and refresh code
-func (f *SyncFacade) Sync(ctx context.Context, initFunc runfunc.InitFunc, refreshFunc runfunc.RefreshFunc) error {
-	// 使用传入的context
-	f.ctx = ctx
-
+func (f *SyncFacade) Sync(initFunc runfunc.InitFunc, refreshFunc runfunc.RefreshFunc) error {
 	// get sync handler by sync type
 	syncHandler, err := getSyncHandler(f.Config.Sync.Type)
 	if err != nil {
@@ -29,15 +24,30 @@ func (f *SyncFacade) Sync(ctx context.Context, initFunc runfunc.InitFunc, refres
 
 	// init code by sync handler
 	if err := syncHandler.Init(f.Config.Workspace, f.Config.Sync, initFunc); err != nil {
+		fmt.Println("init code by sync handler error: ", err)
 		return err
 	}
 
 	// refresh code by sync handler
-	go func() {
-		if err := syncHandler.Refresh(f.ctx, f.Config.Workspace, f.Config.Sync, refreshFunc); err != nil {
-			return
-		}
-	}()
+	if err := syncHandler.Refresh(f.Config.Workspace, f.Config.Sync, refreshFunc); err != nil {
+		fmt.Println("refresh code by sync handler error: ", err)
+		return err
+	}
+
+
+	// execute init func
+	// if err := initFunc(); err != nil {
+	// 	fmt.Println("execute init func error: ", err)
+	// }
+
+	// // execute refresh func with updated files
+	// for{
+	// 	files := <- refreshFileStartFlag
+	// 	fmt.Println("refresh func with updated files: ", files)
+	// 	if err = refreshFunc(files); err != nil {
+	// 		fmt.Println("refresh func error, err", err)
+	// 	}
+	// }
 
 	return nil
 }

@@ -21,7 +21,7 @@ func init() {
 }
 
 func (c *GeminiCodingHandler) Coding(question string, stdout io.Writer, stderr io.Writer) error {
-	err := c.runhandler.Run([]string{fmt.Sprintf("gemini -y -a -p \"%s\"", question)}, stdout, stderr)
+	err := c.runhandler.Run([]string{fmt.Sprintf("gemini -y -a -p \"%s\"", question)}, stdout, stderr, nil)
 	if err != nil {
 		return err
 	}

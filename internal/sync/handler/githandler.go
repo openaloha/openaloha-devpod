@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -37,7 +36,7 @@ func (h *GitSyncHandler) Init(workspace string, syncConfig config.SyncConfig, in
 }
 
 // Refresh is the method to refresh code
-func (h *GitSyncHandler) Refresh(ctx context.Context, workspace string, syncConfig config.SyncConfig, refreshFunc runfunc.RefreshFunc) error {
+func (h *GitSyncHandler) Refresh(workspace string, syncConfig config.SyncConfig, refreshFunc runfunc.RefreshFunc) error {
 	// parse sync interval
 	duration, err := time.ParseDuration(syncConfig.Git.SyncInterval)
 	if err != nil {
@@ -47,42 +46,37 @@ func (h *GitSyncHandler) Refresh(ctx context.Context, workspace string, syncConf
 	// git pull from repo
 	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("[git sync handler] 收到停止信号，正在退出...")
-			return ctx.Err()
-		case <-ticker.C:
-			fmt.Printf("[%s] 执行任务, 当前时间: %s\n",
-				"git sync handler",
-				time.Now().Format("2006-01-02 15:04:05"))
-			// git pull and get updated files
-			updatedFiles, err := h.GitPullWithFiles(workspace, syncConfig.Git.Branch)
-			if err != nil {
-				fmt.Println("git pull error, err", err)
-				continue
-			}
 
-			if len(updatedFiles) == 0 {
-				continue
-			}
+	for range ticker.C {
+		fmt.Printf("[%s] 执行任务, 当前时间: %s\n",
+			"git sync handler",
+			time.Now().Format("2006-01-02 15:04:05"))
+		// git pull and get updated files
+		updatedFiles, err := h.GitPullWithFiles(workspace, syncConfig.Git.Branch)
+		if err != nil {
+			fmt.Println("git pull error, err", err)
+			continue
+		}
 
-			// convert file paths to file objects
-			files := make([]*os.File, 0, len(updatedFiles))
-			for _, filePath := range updatedFiles {
-				// 构建完整的文件路径
-				fullPath := workspace + "/" + filePath
-				file, err := os.Open(fullPath)
-				if err == nil {
-					files = append(files, file)
-				}
-				defer file.Close()
-			}
+		if len(updatedFiles) == 0 {
+			continue
+		}
 
-			// execute refresh func with updated files
-			if err := refreshFunc(files); err != nil {
-				fmt.Println("refresh func error, err", err)
+		// convert file paths to file objects
+		files := make([]*os.File, 0, len(updatedFiles))
+		for _, filePath := range updatedFiles {
+			// 构建完整的文件路径
+			fullPath := workspace + "/" + filePath
+			file, err := os.Open(fullPath)
+			if err == nil {
+				files = append(files, file)
 			}
+			defer file.Close()
+		}
+
+		// execute refresh func with updated files
+		if err = refreshFunc(files); err != nil {
+			fmt.Println("refresh func error, err", err)
 		}
 	}
 
