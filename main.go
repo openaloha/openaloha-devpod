@@ -11,27 +11,27 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/openaloha/openaloha-devpod/api"
-	"github.com/openaloha/openaloha-devpod/config"
-	"github.com/openaloha/openaloha-devpod/constant"
-	_ "github.com/openaloha/openaloha-devpod/internal/run/handler"
-	_ "github.com/openaloha/openaloha-devpod/internal/coding/handler"
-	"github.com/openaloha/openaloha-devpod/run/factory"
-	codingfactory "github.com/openaloha/openaloha-devpod/coding/factory"
-	runhandler "github.com/openaloha/openaloha-devpod/run/handler"
-	"github.com/openaloha/openaloha-devpod/runfunc"
-	"github.com/openaloha/openaloha-devpod/sync"
+	"openaloha.io/openaloha-devpod/api"
+	codingfactory "openaloha.io/openaloha-devpod/coding/factory"
+	"openaloha.io/openaloha-devpod/config"
+	"openaloha.io/openaloha-devpod/constant"
+	_ "openaloha.io/openaloha-devpod/internal/coding/handler"
+	_ "openaloha.io/openaloha-devpod/internal/run/handler"
+	"openaloha.io/openaloha-devpod/run/factory"
+	runhandler "openaloha.io/openaloha-devpod/run/handler"
+	"openaloha.io/openaloha-devpod/runfunc"
+	"openaloha.io/openaloha-devpod/sync"
 )
 
 func main() {
 	// 创建可取消的context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	// 监听系统信号
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	// parse config from file or command line arguments
 	config, err := parseConfig()
 	if err != nil {

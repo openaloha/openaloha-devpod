@@ -3,8 +3,8 @@ package handler
 import (
 	"io"
 
-	"github.com/openaloha/openaloha-devpod/config"
-	"github.com/openaloha/openaloha-devpod/run/handler"
+	"openaloha.io/openaloha-devpod/config"
+	"openaloha.io/openaloha-devpod/run/handler"
 )
 
 type CodingHandler interface {

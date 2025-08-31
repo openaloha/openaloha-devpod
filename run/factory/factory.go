@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/openaloha/openaloha-devpod/run/handler"
+	"openaloha.io/openaloha-devpod/run/handler"
 )
 
 // HandlerFactory 定义创建 handler 的工厂函数

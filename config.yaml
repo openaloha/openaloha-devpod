@@ -17,14 +17,14 @@ run:
   # 初始化命令
   init:
     cmds:
-      - "cd openaloha-front-test/openaloha-front-vue-test && npm install && nohup npm run dev &"
+      - "cd openaloha-front-test/openaloha-front-vue-test && npm install && npm run dev"
   
   # 刷新命令配置
   refresh:
     - condition: "*.vue"
     - condition: "package.json"
       cmds:
-        - "cd openaloha-front-test/openaloha-front-vue-test && npm install && nohup npm run dev &"
+        - "cd openaloha-front-test/openaloha-front-vue-test && npm install && npm run dev"
 
   coding:
     type: gemini

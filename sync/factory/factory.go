@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/openaloha/openaloha-devpod/sync/handler"
+	"openaloha.io/openaloha-devpod/sync/handler"
 )
 
 var (

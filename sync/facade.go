@@ -2,11 +2,12 @@ package sync
 
 import (
 	"context"
-	"github.com/openaloha/openaloha-devpod/config"
-	_ "github.com/openaloha/openaloha-devpod/internal/sync/handler"
-	"github.com/openaloha/openaloha-devpod/runfunc"
-	"github.com/openaloha/openaloha-devpod/sync/factory"
-	"github.com/openaloha/openaloha-devpod/sync/handler"
+
+	"openaloha.io/openaloha-devpod/config"
+	_ "openaloha.io/openaloha-devpod/internal/sync/handler"
+	"openaloha.io/openaloha-devpod/runfunc"
+	"openaloha.io/openaloha-devpod/sync/factory"
+	"openaloha.io/openaloha-devpod/sync/handler"
 )
 
 // SyncFacade is the facade for the sync service
@@ -19,7 +20,7 @@ type SyncFacade struct {
 func (f *SyncFacade) Sync(ctx context.Context, initFunc runfunc.InitFunc, refreshFunc runfunc.RefreshFunc) error {
 	// 使用传入的context
 	f.ctx = ctx
-	
+
 	// get sync handler by sync type
 	syncHandler, err := getSyncHandler(f.Config.Sync.Type)
 	if err != nil {

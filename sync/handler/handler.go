@@ -2,8 +2,9 @@ package handler
 
 import (
 	"context"
-	"github.com/openaloha/openaloha-devpod/config"
-	"github.com/openaloha/openaloha-devpod/runfunc"
+
+	"openaloha.io/openaloha-devpod/config"
+	"openaloha.io/openaloha-devpod/runfunc"
 )
 
 // InitFunc is the function type for initialization

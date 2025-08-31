@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/openaloha/openaloha-devpod/coding/handler"
+	"openaloha.io/openaloha-devpod/coding/handler"
 )
 
 var (
 	providerMu sync.RWMutex
-	providers = make(map[string]handler.CodingHandler)
+	providers  = make(map[string]handler.CodingHandler)
 )
 
 func Register(name string, provider handler.CodingHandler) {

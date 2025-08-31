@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/openaloha/openaloha-devpod/run/factory"
-	"github.com/openaloha/openaloha-devpod/run/handler"
+	"openaloha.io/openaloha-devpod/run/factory"
+	"openaloha.io/openaloha-devpod/run/handler"
 )
 
 type CmdRunHandler struct {

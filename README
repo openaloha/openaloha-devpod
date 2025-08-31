@@ -1,3 +1,3 @@
 ```shell
-go run main.go -workspace="/Users/Shared/Projects/test/openaloha-test" -sync.type="git" -sync.git.url="https://github.com/openaloha/openaloha-test.git" -sync.git.branch="main" -sync.git.syncInterval="10s" -run.init.cmds="pwd;cd ./openaloha-front-test/openaloha-front-vue-test && npm install && nohup npm run dev &" -run.refresh='[{"condition":"*.vue","cmds":[]}]'
+go run main.go -workspace="/Users/Shared/Projects/test/openaloha-test" -sync.type="git" -sync.git.url="https://openaloha.io/openaloha-test.git" -sync.git.branch="main" -sync.git.syncInterval="10s" -run.init.cmds="pwd;cd ./openaloha-front-test/openaloha-front-vue-test && npm install && nohup npm run dev &" -run.refresh='[{"condition":"*.vue","cmds":[]}]'
 ```

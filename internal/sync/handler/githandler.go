@@ -9,10 +9,10 @@ import (
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/object"
-	"github.com/openaloha/openaloha-devpod/config"
-	"github.com/openaloha/openaloha-devpod/constant"
-	"github.com/openaloha/openaloha-devpod/runfunc"
-	"github.com/openaloha/openaloha-devpod/sync/factory"
+	"openaloha.io/openaloha-devpod/config"
+	"openaloha.io/openaloha-devpod/constant"
+	"openaloha.io/openaloha-devpod/runfunc"
+	"openaloha.io/openaloha-devpod/sync/factory"
 )
 
 // GitSyncHandler is the handler for the git sync service

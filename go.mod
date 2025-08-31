@@ -1,4 +1,4 @@
-module github.com/openaloha/openaloha-devpod
+module openaloha.io/openaloha-devpod
 
 go 1.24.4
 
