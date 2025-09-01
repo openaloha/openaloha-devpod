@@ -6,7 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"openaloha.io/openaloha-devpod/api"
 	codingfactory "openaloha.io/openaloha-devpod/coding/factory"
@@ -21,6 +24,14 @@ import (
 )
 
 func main() {
+	// 创建主context用于优雅关闭
+	mainCtx, mainCancel := context.WithCancel(context.Background())
+	defer mainCancel()
+
+	// 监听系统信号
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	// parse config from file or command line arguments
 	config, err := parseConfig()
 	if err != nil {
@@ -50,20 +61,63 @@ func main() {
 	// start server
 	fmt.Println("start server")
 	server := api.NewDevPodServer(":10003", coding)
-	server.ListenAndServe()
+	serverErrChan := server.ListenAndServe()
 
 	var cancelChan chan context.CancelFunc = make(chan context.CancelFunc, 10)
 	
 	// build init func
-	initFunc := buildInitFunc(config, handler, cancelChan)
+	initFunc := buildInitFunc(config, handler, cancelChan, mainCtx)
 
 	// build refresh func
-	refreshFunc := buildRefreshFunc(config, handler, cancelChan)
+	refreshFunc := buildRefreshFunc(config, handler, cancelChan, mainCtx)
 
-	// start sync job to sync code
-	if err = startSync(config, initFunc, refreshFunc); err != nil {
-		fmt.Println("start sync job error: ", err)
+	// 在goroutine中启动sync job
+	syncErrChan := make(chan error, 1)
+	go func() {
+		if err := startSync(config, initFunc, refreshFunc); err != nil {
+			fmt.Println("start sync job error: ", err)
+			syncErrChan <- err
+		}
+	}()
+
+	// 等待信号或错误
+	select {
+	case sig := <-sigChan:
+		fmt.Printf("\n收到信号 %v，开始优雅关闭...\n", sig)
+		mainCancel()
+		
+		// 优雅关闭服务器
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			fmt.Printf("服务器关闭错误: %v\n", err)
+		}
+		
+		// 取消所有正在运行的命令
+		for {
+			select {
+			case cancelFunc := <-cancelChan:
+				cancelFunc()
+			default:
+				goto cleanup
+			}
+		}
+		
+	case err := <-serverErrChan:
+		if err != nil {
+			fmt.Printf("服务器错误: %v\n", err)
+		}
+		mainCancel()
+		
+	case err := <-syncErrChan:
+		if err != nil {
+			fmt.Printf("同步任务错误: %v\n", err)
+		}
+		mainCancel()
 	}
+
+	cleanup:
+	fmt.Println("程序已优雅关闭")
 }
 
 // parse config from YAML file
@@ -107,10 +161,17 @@ func startSync(config config.Config, initFunc runfunc.InitFunc, refreshFunc runf
 }
 
 // buildInitFunc returns a new InitFunc
-func buildInitFunc(config config.Config, handler runhandler.RunHandler, cancelChan chan context.CancelFunc) runfunc.InitFunc {
+func buildInitFunc(config config.Config, handler runhandler.RunHandler, cancelChan chan context.CancelFunc, ctx context.Context) runfunc.InitFunc {
 	return func() error {
 		go func() error {
 			fmt.Println("init func")
+			// 检查context是否已取消
+			select {
+			case <-ctx.Done():
+				fmt.Println("init func cancelled")
+				return ctx.Err()
+			default:
+			}
 			// run init cmd
 			if err := handler.Run(config.Run.Init.Cmds, os.Stdout, os.Stderr, cancelChan); err != nil {
 				return err
@@ -122,10 +183,18 @@ func buildInitFunc(config config.Config, handler runhandler.RunHandler, cancelCh
 }
 
 // buildRefreshFunc returns a new RefreshFunc
-func buildRefreshFunc(config config.Config, handler runhandler.RunHandler, cancelChan chan context.CancelFunc) runfunc.RefreshFunc {
+func buildRefreshFunc(config config.Config, handler runhandler.RunHandler, cancelChan chan context.CancelFunc, ctx context.Context) runfunc.RefreshFunc {
 	return func(files []*os.File) error {
 		
 		fmt.Println("refresh func")
+
+		// 检查context是否已取消
+		select {
+		case <-ctx.Done():
+			fmt.Println("refresh func cancelled")
+			return ctx.Err()
+		default:
+		}
 
 		// get refresh cmd
 		refreshCmds, err := matchRefreshCmd(files, config.Run.Refresh)
@@ -144,6 +213,9 @@ func buildRefreshFunc(config config.Config, handler runhandler.RunHandler, cance
 				case cancelItem := <-cancelChan:
 					fmt.Println("cancel running cmd")
 					cancelItem()
+				case <-ctx.Done():
+					fmt.Println("refresh func cancelled during execution")
+					return ctx.Err()
 				default:
 					// run refresh cmd
 					go func() error {
