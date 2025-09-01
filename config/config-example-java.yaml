@@ -1,0 +1,35 @@
+# OpenAloha DevPod Configuration Example
+# 使用方法: ./openaloha-devpod -config=config.yaml
+
+# 工作空间路径
+workspace: "/Users/Shared/Projects/openaloha/openaloha-sidecar-test"
+
+# 同步配置
+sync:
+  type: "git"
+  git:
+    url: "https://github.com/openaloha/openaloha-test"
+    branch: "main"
+    sync-interval: "10s"
+
+# 运行配置
+run:
+  # 初始化命令
+  init:
+    cmds:
+      - "cd openaloha-java-test/openaloha-java-springboot-test && mvn clean compile && mvn spring-boot:run"
+  
+  # 刷新命令配置
+  refresh:
+    - condition: "*.java"
+      cmds:
+        - "cd openaloha-java-test/openaloha-java-springboot-test && mvn clean compile && mvn spring-boot:run"
+    - condition: "pom.xml"
+      cmds:
+        - "cd openaloha-java-test/openaloha-java-springboot-test && mvn clean compile && mvn spring-boot:run"
+
+  coding:
+    type: gemini
+    gemini:
+      baseurl: https://google.com
+      apikey: sk-xxxx
